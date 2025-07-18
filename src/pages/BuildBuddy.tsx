@@ -7,9 +7,10 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { useToast } from '../components/ui/use-toast';
 import ItineraryDayCard from '../components/ui/itinerary-day-card';
 import AppLayout from '../components/layout/AppLayout';
-import { generateItinerary, saveItineraryToTrip } from '../lib/generate-itinerary';
+import { generateItinerary, saveItinerary } from '../lib/generate-itinerary';
 import { createTrip } from '../lib/supabase';
 import { ItineraryDay } from '../lib/supabase';
 import { Sparkles, Loader2, Calendar, MapPin, DollarSign, Tags } from 'lucide-react';
@@ -17,6 +18,7 @@ import { Sparkles, Loader2, Calendar, MapPin, DollarSign, Tags } from 'lucide-re
 const BuildBuddy = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
@@ -63,11 +65,20 @@ const BuildBuddy = () => {
         setTripId(newTrip.id);
         
         // Save itinerary
-        await saveItineraryToTrip(newTrip.id, generatedItinerary);
+        await saveItinerary(newTrip.id, generatedItinerary);
       }
+      
+      toast({
+        title: "Itinerary generated!",
+        description: "Your AI-powered travel itinerary is ready.",
+      });
     } catch (error) {
       console.error('Error generating itinerary:', error);
-      alert('Failed to generate itinerary. Please try again.');
+      toast({
+        title: "Generation failed",
+        description: "Failed to generate itinerary. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -75,12 +86,18 @@ const BuildBuddy = () => {
   
   const handleCustomize = () => {
     // In a real app, this would open a customization interface
-    alert('Customize feature would open here');
+    toast({
+      title: "Customize feature",
+      description: "Itinerary customization would open here.",
+    });
   };
   
   const handleCloneTrip = () => {
     // In a real app, this would clone the trip for the user
-    alert('Clone feature would happen here');
+    toast({
+      title: "Clone feature",
+      description: "Trip cloning would happen here.",
+    });
   };
   
   const handleBookNow = () => {

@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { useToast } from '../components/ui/use-toast';
 import AppLayout from '../components/layout/AppLayout';
 import { fetchTrip, createBooking } from '../lib/supabase';
 import { Plane, Hotel, Train, Calendar, MapPin, CreditCard, Check } from 'lucide-react';
@@ -14,6 +15,7 @@ import { Plane, Hotel, Train, Calendar, MapPin, CreditCard, Check } from 'lucide
 const Book = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const { toast } = useToast();
   
   // Get tripId from location state if available
   const tripId = location.state?.tripId;
@@ -95,9 +97,17 @@ const Book = () => {
       }
       
       setShowConfirmation(true);
+      toast({
+        title: "Flight booked!",
+        description: "Your flight has been successfully booked.",
+      });
     } catch (error) {
       console.error('Error booking flight:', error);
-      alert('Failed to book flight. Please try again.');
+      toast({
+        title: "Booking failed",
+        description: "Failed to book flight. Please try again.",
+        variant: "destructive",
+      });
     }
   };
   
@@ -124,9 +134,17 @@ const Book = () => {
       }
       
       setShowConfirmation(true);
+      toast({
+        title: "Hotel booked!",
+        description: "Your hotel has been successfully booked.",
+      });
     } catch (error) {
       console.error('Error booking hotel:', error);
-      alert('Failed to book hotel. Please try again.');
+      toast({
+        title: "Booking failed",
+        description: "Failed to book hotel. Please try again.",
+        variant: "destructive",
+      });
     }
   };
   
@@ -152,9 +170,17 @@ const Book = () => {
       }
       
       setShowConfirmation(true);
+      toast({
+        title: "Train booked!",
+        description: "Your train has been successfully booked.",
+      });
     } catch (error) {
       console.error('Error booking train:', error);
-      alert('Failed to book train. Please try again.');
+      toast({
+        title: "Booking failed",
+        description: "Failed to book train. Please try again.",
+        variant: "destructive",
+      });
     }
   };
   

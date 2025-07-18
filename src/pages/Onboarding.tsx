@@ -7,11 +7,13 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { useToast } from '../components/ui/use-toast';
 import AppLayout from '../components/layout/AppLayout';
 
 const Onboarding = () => {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
@@ -34,13 +36,25 @@ const Onboarding = () => {
       
       if (error) {
         console.error('Login failed:', error);
-        alert(error.message);
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
         navigate('/');
       }
     } catch (error) {
       console.error('Login error:', error);
-      alert('An unexpected error occurred');
+      toast({
+        title: "Login failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -55,13 +69,25 @@ const Onboarding = () => {
       
       if (error) {
         console.error('Signup failed:', error);
-        alert(error.message);
+        toast({
+          title: "Signup failed",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
+        toast({
+          title: "Account created!",
+          description: "Your account has been successfully created.",
+        });
         navigate('/');
       }
     } catch (error) {
       console.error('Signup error:', error);
-      alert('An unexpected error occurred');
+      toast({
+        title: "Signup failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -80,7 +106,7 @@ const Onboarding = () => {
             <p className="text-white/80 mt-2 text-lg">One Click to Anywhere</p>
           </div>
           
-          <Card className="glass-effect">
+          <Card className="glass-card">
             <CardHeader>
               <CardTitle className="text-center">Welcome</CardTitle>
               <CardDescription className="text-center">

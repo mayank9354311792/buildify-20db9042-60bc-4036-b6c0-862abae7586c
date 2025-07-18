@@ -2,6 +2,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from './components/ui/toaster';
+import { Toaster as Sonner } from './components/ui/sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -43,10 +45,15 @@ const App = () => {
       <ThemeProvider>
         <AuthProvider>
           <BrowserRouter>
+            <Toaster />
+            <Sonner />
             <Routes>
               {/* Public routes */}
               <Route path="/landing" element={<Landing />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              
+              {/* Redirect from Index to Landing */}
+              <Route path="/index" element={<Navigate to="/landing" replace />} />
               
               {/* App routes */}
               <Route path="/" element={<BuildBuddy />} />
