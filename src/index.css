@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -47,16 +48,6 @@
     --border: 201 30% 90%;
     --input: 201 30% 90%;
     --ring: 201 100% 40%;
-    
-    /* Sidebar */
-    --sidebar-background: 201 30% 97%;
-    --sidebar-foreground: 201 100% 10%;
-    --sidebar-primary: 201 100% 40%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 201 30% 95%;
-    --sidebar-accent-foreground: 201 100% 30%;
-    --sidebar-border: 201 30% 90%;
-    --sidebar-ring: 201 100% 50%;
   }
 
   .dark {
@@ -87,16 +78,6 @@
     --border: 201 30% 20%;
     --input: 201 30% 20%;
     --ring: 201 100% 50%;
-    
-    /* Sidebar */
-    --sidebar-background: 201 100% 7%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 201 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 201 30% 15%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 201 30% 20%;
-    --sidebar-ring: 201 100% 50%;
   }
 }
 
@@ -104,8 +85,26 @@
   * {
     @apply border-border;
   }
-
+  
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* Custom styles */
+.futuristic-input {
+  @apply bg-transparent border-b border-primary/50 focus:border-primary outline-none px-2 py-1 transition-colors;
+}
+
+.hologram-text {
+  @apply font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400 animate-pulse;
+}
+
+.glass-card {
+  @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-lg;
+}
+
+.ocean-gradient {
+  @apply bg-gradient-to-r from-primary to-blue-400;
 }

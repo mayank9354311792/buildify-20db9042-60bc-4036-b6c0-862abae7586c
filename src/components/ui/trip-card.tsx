@@ -1,15 +1,12 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Progress } from '../ui/progress';
 import { Trip } from '../../lib/supabase';
-import { formatDate, formatCurrency } from '../../lib/utils';
-import { Calendar, MapPin, DollarSign } from 'lucide-react';
+import { formatDate, formatCurrency, calculateDays } from '../../lib/utils';
+import { Calendar, MapPin, DollarSign, Tag } from 'lucide-react';
 
 interface TripCardProps {
   trip: Trip;
+  onView?: () => void;
   onEdit?: () => void;
   onCancel?: () => void;
   onStart?: () => void;
@@ -18,25 +15,27 @@ interface TripCardProps {
 
 const TripCard: React.FC<TripCardProps> = ({ 
   trip, 
+  onView, 
   onEdit, 
   onCancel, 
   onStart,
   showProgress = false
 }) => {
-  // Calculate trip duration in days
-  const startDate = new Date(trip.start_date);
-  const endDate = new Date(trip.end_date);
-  const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)) + 1;
+  // Calculate trip duration
+  const durationDays = calculateDays(trip.start_date, trip.end_date);
   
   // Calculate progress for ongoing trips
   const calculateProgress = () => {
     if (trip.status !== 'ongoing') return 0;
     
     const today = new Date();
-    const elapsed = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
-    const progress = Math.min(Math.max(0, (elapsed / durationDays) * 100), 100);
+    const start = new Date(trip.start_date);
+    const end = new Date(trip.end_date);
     
-    return progress;
+    const totalDays = calculateDays(trip.start_date, trip.end_date);
+    const daysElapsed = calculateDays(trip.start_date, today.toISOString());
+    
+    return Math.min(Math.max(0, (daysElapsed / totalDays) * 100), 100);
   };
   
   // Calculate days left for ongoing trips
@@ -44,8 +43,9 @@ const TripCard: React.FC<TripCardProps> = ({
     if (trip.status !== 'ongoing') return 0;
     
     const today = new Date();
-    const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+    const end = new Date(trip.end_date);
     
+    const daysLeft = calculateDays(today.toISOString(), trip.end_date);
     return Math.max(0, daysLeft);
   };
   
@@ -55,79 +55,111 @@ const TripCard: React.FC<TripCardProps> = ({
   // Status badge color
   const getStatusColor = () => {
     switch (trip.status) {
-      case 'upcoming': return 'bg-blue-500';
-      case 'ongoing': return 'bg-green-500';
-      case 'completed': return 'bg-gray-500';
-      case 'cancelled': return 'bg-red-500';
-      default: return 'bg-blue-500';
+      case 'upcoming': return 'bg-blue-500 text-white';
+      case 'ongoing': return 'bg-green-500 text-white';
+      case 'completed': return 'bg-gray-500 text-white';
+      case 'cancelled': return 'bg-red-500 text-white';
+      default: return 'bg-blue-500 text-white';
     }
   };
   
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-xl">{trip.title}</CardTitle>
-          <Badge className={getStatusColor()}>
+    <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-semibold text-lg">{trip.title}</h3>
+          <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor()}`}>
             {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="flex items-center text-sm mb-2">
-          <MapPin size={16} className="mr-1 text-primary" />
-          <span>{trip.destination}</span>
-        </div>
-        <div className="flex items-center text-sm mb-2">
-          <Calendar size={16} className="mr-1 text-primary" />
-          <span>
-            {formatDate(trip.start_date)} - {formatDate(trip.end_date)} ({durationDays} days)
           </span>
         </div>
-        <div className="flex items-center text-sm mb-2">
-          <DollarSign size={16} className="mr-1 text-primary" />
-          <span>{formatCurrency(trip.budget)}</span>
+        
+        <div className="space-y-2 mb-3">
+          <div className="flex items-center text-sm">
+            <MapPin className="h-4 w-4 mr-2 text-primary" />
+            <span>{trip.destination}</span>
+          </div>
+          
+          <div className="flex items-center text-sm">
+            <Calendar className="h-4 w-4 mr-2 text-primary" />
+            <span>
+              {formatDate(trip.start_date)} - {formatDate(trip.end_date)} ({durationDays} days)
+            </span>
+          </div>
+          
+          <div className="flex items-center text-sm">
+            <DollarSign className="h-4 w-4 mr-2 text-primary" />
+            <span>{formatCurrency(trip.budget)}</span>
+          </div>
         </div>
         
-        {trip.interests && trip.interests.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {trip.interests.map((interest, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {interest}
-              </Badge>
+        {trip.tags && trip.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {trip.tags.map((tag, index) => (
+              <div 
+                key={index} 
+                className="flex items-center text-xs px-2 py-1 rounded-full bg-primary/10 text-primary"
+              >
+                <Tag className="h-3 w-3 mr-1" />
+                {tag}
+              </div>
             ))}
           </div>
         )}
         
         {showProgress && trip.status === 'ongoing' && (
-          <div className="mt-3">
-            <Progress value={progress} className="h-2" />
+          <div className="mb-3">
+            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary rounded-full" 
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
             <div className="flex justify-between text-xs text-muted-foreground mt-1">
               <span>{Math.round(progress)}% complete</span>
               <span>{daysLeft} days left</span>
             </div>
           </div>
         )}
-      </CardContent>
-      <CardFooter className="flex gap-2 pt-2">
-        {trip.status === 'upcoming' && (
-          <>
-            {onStart && (
-              <Button size="sm" onClick={onStart}>Start Trip</Button>
-            )}
-            {onEdit && (
-              <Button size="sm" variant="outline" onClick={onEdit}>Edit</Button>
-            )}
-            {onCancel && (
-              <Button size="sm" variant="destructive" onClick={onCancel}>Cancel</Button>
-            )}
-          </>
-        )}
-        {trip.status === 'ongoing' && onEdit && (
-          <Button size="sm" variant="outline" onClick={onEdit}>Update</Button>
-        )}
-      </CardFooter>
-    </Card>
+        
+        <div className="flex gap-2 mt-4">
+          {onView && (
+            <button 
+              onClick={onView}
+              className="flex-1 py-2 rounded-md bg-primary text-white text-sm font-medium"
+            >
+              View
+            </button>
+          )}
+          
+          {trip.status === 'upcoming' && onStart && (
+            <button 
+              onClick={onStart}
+              className="flex-1 py-2 rounded-md bg-green-500 text-white text-sm font-medium"
+            >
+              Start Trip
+            </button>
+          )}
+          
+          {onEdit && (
+            <button 
+              onClick={onEdit}
+              className="flex-1 py-2 rounded-md bg-muted text-foreground text-sm font-medium"
+            >
+              Edit
+            </button>
+          )}
+          
+          {trip.status === 'upcoming' && onCancel && (
+            <button 
+              onClick={onCancel}
+              className="flex-1 py-2 rounded-md bg-red-500 text-white text-sm font-medium"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

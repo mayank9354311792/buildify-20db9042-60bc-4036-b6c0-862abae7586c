@@ -7,13 +7,11 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { useToast } from '../components/ui/use-toast';
 import AppLayout from '../components/layout/AppLayout';
 
 const Onboarding = () => {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
@@ -35,24 +33,14 @@ const Onboarding = () => {
       const { error } = await signIn(loginEmail, loginPassword);
       
       if (error) {
-        toast({
-          title: 'Login failed',
-          description: error.message,
-          variant: 'destructive',
-        });
+        console.error('Login failed:', error);
+        alert(error.message);
       } else {
-        toast({
-          title: 'Welcome back!',
-          description: 'You have successfully logged in.',
-        });
         navigate('/');
       }
     } catch (error) {
-      toast({
-        title: 'Login failed',
-        description: 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
+      console.error('Login error:', error);
+      alert('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -66,24 +54,14 @@ const Onboarding = () => {
       const { error } = await signUp(signupEmail, signupPassword, signupUsername);
       
       if (error) {
-        toast({
-          title: 'Signup failed',
-          description: error.message,
-          variant: 'destructive',
-        });
+        console.error('Signup failed:', error);
+        alert(error.message);
       } else {
-        toast({
-          title: 'Account created!',
-          description: 'Your account has been successfully created.',
-        });
         navigate('/');
       }
     } catch (error) {
-      toast({
-        title: 'Signup failed',
-        description: 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
+      console.error('Signup error:', error);
+      alert('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -94,19 +72,19 @@ const Onboarding = () => {
   };
   
   return (
-    <AppLayout hideNavigation>
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-primary/10 to-background">
+    <AppLayout hideNavigation className="bg-gradient-to-b from-blue-500 to-blue-700">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary">AITrvlBuddy</h1>
-            <p className="text-muted-foreground mt-2">Your AI-powered travel companion</p>
+            <h1 className="text-4xl font-bold text-white hologram-text">AITrvlBuddy</h1>
+            <p className="text-white/80 mt-2 text-lg">One Click to Anywhere</p>
           </div>
           
-          <Card>
+          <Card className="glass-effect">
             <CardHeader>
-              <CardTitle>Welcome</CardTitle>
-              <CardDescription>
-                Sign in to your account or create a new one to get started
+              <CardTitle className="text-center">Welcome</CardTitle>
+              <CardDescription className="text-center">
+                Sign in to your account or create a new one
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -144,6 +122,24 @@ const Onboarding = () => {
                       <Button type="submit" className="w-full" disabled={loading}>
                         {loading ? 'Logging in...' : 'Login'}
                       </Button>
+                      
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t"></span>
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <Button type="button" variant="outline" className="w-full">
+                          Google
+                        </Button>
+                        <Button type="button" variant="outline" className="w-full">
+                          Apple
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 </TabsContent>
@@ -187,6 +183,24 @@ const Onboarding = () => {
                       <Button type="submit" className="w-full" disabled={loading}>
                         {loading ? 'Creating account...' : 'Create Account'}
                       </Button>
+                      
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t"></span>
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <Button type="button" variant="outline" className="w-full">
+                          Google
+                        </Button>
+                        <Button type="button" variant="outline" className="w-full">
+                          Apple
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 </TabsContent>

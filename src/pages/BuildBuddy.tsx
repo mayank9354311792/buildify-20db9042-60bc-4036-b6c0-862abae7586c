@@ -2,28 +2,28 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
-import { generateItinerary, saveItinerary, ItineraryDay } from '../lib/generate-itinerary';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
-import { useToast } from '../components/ui/use-toast';
 import ItineraryDayCard from '../components/ui/itinerary-day-card';
 import AppLayout from '../components/layout/AppLayout';
-import { Loader2, Sparkles } from 'lucide-react';
+import { generateItinerary, saveItineraryToTrip } from '../lib/generate-itinerary';
+import { createTrip } from '../lib/supabase';
+import { ItineraryDay } from '../lib/supabase';
+import { Sparkles, Loader2, Calendar, MapPin, DollarSign, Tags } from 'lucide-react';
 
 const BuildBuddy = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   
+  const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [interests, setInterests] = useState('');
   const [budget, setBudget] = useState('');
+  const [interests, setInterests] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [itinerary, setItinerary] = useState<ItineraryDay[] | null>(null);
@@ -39,51 +39,35 @@ const BuildBuddy = () => {
         destination,
         startDate,
         endDate,
-        interests: interests.split(',').map(i => i.trim()),
         budget: parseFloat(budget),
+        tags: interests.split(',').map(i => i.trim())
       });
       
       setItinerary(generatedItinerary);
       
       // Create trip in database if user is logged in
       if (user) {
-        const { data, error } = await supabase
-          .from('trips')
-          .insert({
-            user_id: user.id,
-            title: `Trip to ${destination}`,
-            destination,
-            start_date: startDate,
-            end_date: endDate,
-            budget: parseFloat(budget),
-            interests: interests.split(',').map(i => i.trim()),
-            status: 'upcoming',
-            is_public: false,
-          })
-          .select()
-          .single();
+        const newTrip = await createTrip({
+          user_id: user.id,
+          title: `Trip to ${destination}`,
+          source,
+          destination,
+          start_date: startDate,
+          end_date: endDate,
+          budget: parseFloat(budget),
+          is_public: false,
+          status: 'upcoming',
+          tags: interests.split(',').map(i => i.trim())
+        });
         
-        if (error) {
-          console.error('Error creating trip:', error);
-        } else if (data) {
-          setTripId(data.id);
-          
-          // Save itinerary days
-          await saveItinerary(data.id, generatedItinerary);
-        }
+        setTripId(newTrip.id);
+        
+        // Save itinerary
+        await saveItineraryToTrip(newTrip.id, generatedItinerary);
       }
-      
-      toast({
-        title: 'Itinerary generated!',
-        description: 'Your AI-powered travel itinerary is ready.',
-      });
     } catch (error) {
       console.error('Error generating itinerary:', error);
-      toast({
-        title: 'Generation failed',
-        description: 'An error occurred while generating your itinerary.',
-        variant: 'destructive',
-      });
+      alert('Failed to generate itinerary. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -91,18 +75,12 @@ const BuildBuddy = () => {
   
   const handleCustomize = () => {
     // In a real app, this would open a customization interface
-    toast({
-      title: 'Customize feature',
-      description: 'Itinerary customization would open here.',
-    });
+    alert('Customize feature would open here');
   };
   
   const handleCloneTrip = () => {
     // In a real app, this would clone the trip for the user
-    toast({
-      title: 'Clone feature',
-      description: 'Trip cloning would happen here.',
-    });
+    alert('Clone feature would happen here');
   };
   
   const handleBookNow = () => {
@@ -135,34 +113,76 @@ const BuildBuddy = () => {
             <CardContent>
               <form onSubmit={handleGenerateItinerary} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="destination">Destination</Label>
-                  <Input
-                    id="destination"
-                    placeholder="Paris, Tokyo, New York..."
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    required
-                  />
+                  <Label htmlFor="source">From</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="source"
+                      className="pl-9"
+                      placeholder="Your location"
+                      value={source}
+                      onChange={(e) => setSource(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="destination">To</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="destination"
+                      className="pl-9"
+                      placeholder="Where to?"
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start-date">Start Date</Label>
-                    <Input
-                      id="start-date"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="start-date"
+                        className="pl-9"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="end-date">End Date</Label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="end-date"
+                        className="pl-9"
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="budget">Budget (USD)</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="end-date"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
+                      id="budget"
+                      className="pl-9"
+                      type="number"
+                      placeholder="5000"
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
                       required
                     />
                   </div>
@@ -170,28 +190,19 @@ const BuildBuddy = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="interests">Interests</Label>
-                  <Textarea
-                    id="interests"
-                    placeholder="Food, history, nature, shopping..."
-                    value={interests}
-                    onChange={(e) => setInterests(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Tags className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Textarea
+                      id="interests"
+                      className="pl-9"
+                      placeholder="Food, history, nature, shopping..."
+                      value={interests}
+                      onChange={(e) => setInterests(e.target.value)}
+                    />
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     Separate interests with commas
                   </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="budget">Budget (USD)</Label>
-                  <Input
-                    id="budget"
-                    type="number"
-                    placeholder="5000"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    required
-                  />
                 </div>
                 
                 <Button type="submit" className="w-full" disabled={loading}>

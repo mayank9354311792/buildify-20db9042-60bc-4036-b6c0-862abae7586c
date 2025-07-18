@@ -1,17 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { supabase, Trip } from '../lib/supabase';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { useToast } from '../components/ui/use-toast';
 import TripCard from '../components/ui/trip-card';
 import AppLayout from '../components/layout/AppLayout';
-import { Map, RefreshCw } from 'lucide-react';
+import { fetchTrips, updateTrip, deleteTrip } from '../lib/supabase';
+import { Trip } from '../lib/supabase';
+import { Map, RefreshCw, Plus } from 'lucide-react';
 
 const MyTrips = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'upcoming' | 'ongoing' | 'completed'>('upcoming');
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -19,28 +18,18 @@ const MyTrips = () => {
   
   useEffect(() => {
     if (user) {
-      fetchTrips(activeTab);
+      fetchUserTrips(activeTab);
     }
   }, [user, activeTab]);
   
-  const fetchTrips = async (status: string) => {
+  const fetchUserTrips = async (status: string) => {
     if (!user) return;
     
     setLoading(true);
     
     try {
-      const { data, error } = await supabase
-        .from('trips')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', status)
-        .order('start_date', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching trips:', error);
-      } else if (data) {
-        setTrips(data as Trip[]);
-      }
+      const fetchedTrips = await fetchTrips(user.id, status);
+      setTrips(fetchedTrips);
     } catch (error) {
       console.error('Error fetching trips:', error);
     } finally {
@@ -50,66 +39,50 @@ const MyTrips = () => {
   
   const handleStartTrip = async (tripId: string) => {
     try {
-      const { error } = await supabase
-        .from('trips')
-        .update({ status: 'ongoing' })
-        .eq('id', tripId);
-      
-      if (error) {
-        throw error;
-      }
+      await updateTrip(tripId, { status: 'ongoing' });
       
       // Update local state
       setTrips(trips.filter(trip => trip.id !== tripId));
       
-      toast({
-        title: 'Trip started!',
-        description: 'Your trip has been moved to ongoing trips.',
-      });
+      alert('Trip started! It has been moved to ongoing trips.');
     } catch (error) {
       console.error('Error starting trip:', error);
-      toast({
-        title: 'Action failed',
-        description: 'An error occurred while starting the trip.',
-        variant: 'destructive',
-      });
+      alert('Failed to start trip. Please try again.');
     }
   };
   
   const handleCancelTrip = async (tripId: string) => {
     try {
-      const { error } = await supabase
-        .from('trips')
-        .update({ status: 'cancelled' })
-        .eq('id', tripId);
-      
-      if (error) {
-        throw error;
-      }
+      await updateTrip(tripId, { status: 'cancelled' });
       
       // Update local state
       setTrips(trips.filter(trip => trip.id !== tripId));
       
-      toast({
-        title: 'Trip cancelled',
-        description: 'Your trip has been cancelled.',
-      });
+      alert('Trip cancelled.');
     } catch (error) {
       console.error('Error cancelling trip:', error);
-      toast({
-        title: 'Action failed',
-        description: 'An error occurred while cancelling the trip.',
-        variant: 'destructive',
-      });
+      alert('Failed to cancel trip. Please try again.');
     }
   };
   
   const handleEditTrip = (tripId: string) => {
     // In a real app, this would navigate to an edit page
-    toast({
-      title: 'Edit feature',
-      description: 'Trip editing would open here.',
-    });
+    alert('Edit feature would open here');
+  };
+  
+  const handleViewTrip = (tripId: string) => {
+    // In a real app, this would navigate to a trip details page
+    alert('View trip details would open here');
+  };
+  
+  const handleShareTrip = (tripId: string) => {
+    // In a real app, this would open a share dialog
+    alert('Share trip feature would open here');
+  };
+  
+  const handleCreateTrip = () => {
+    // Navigate to the Build Buddy page
+    window.location.href = '/';
   };
   
   return (
@@ -120,14 +93,26 @@ const MyTrips = () => {
             <Map size={24} className="text-primary" />
             <h1 className="text-2xl font-bold">My Trips</h1>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => fetchTrips(activeTab)} 
-            disabled={loading}
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2" 
+              onClick={() => fetchUserTrips(activeTab)} 
+              disabled={loading}
+            >
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={handleCreateTrip}
+            >
+              <Plus size={16} />
+              New
+            </Button>
+          </div>
         </div>
         
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
@@ -145,7 +130,7 @@ const MyTrips = () => {
             ) : trips.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No upcoming trips</p>
-                <Button className="mt-4" onClick={() => window.location.href = '/'}>
+                <Button className="mt-4" onClick={handleCreateTrip}>
                   Plan a Trip
                 </Button>
               </div>
@@ -180,6 +165,7 @@ const MyTrips = () => {
                     key={trip.id}
                     trip={trip}
                     onEdit={() => handleEditTrip(trip.id)}
+                    onView={() => handleViewTrip(trip.id)}
                     showProgress
                   />
                 ))}
@@ -202,6 +188,8 @@ const MyTrips = () => {
                   <TripCard
                     key={trip.id}
                     trip={trip}
+                    onView={() => handleViewTrip(trip.id)}
+                    onShare={() => handleShareTrip(trip.id)}
                   />
                 ))}
               </div>

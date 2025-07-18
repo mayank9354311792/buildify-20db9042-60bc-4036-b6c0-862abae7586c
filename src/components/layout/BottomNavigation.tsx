@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Map, User, BookOpen } from 'lucide-react';
+import { Home, BookOpen, Globe, Map, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const BottomNavigation = () => {
@@ -21,7 +21,7 @@ const BottomNavigation = () => {
     {
       name: 'Xplore',
       path: '/xplore',
-      icon: Compass,
+      icon: Globe,
     },
     {
       name: 'My Trips',
@@ -36,7 +36,7 @@ const BottomNavigation = () => {
   ];
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;

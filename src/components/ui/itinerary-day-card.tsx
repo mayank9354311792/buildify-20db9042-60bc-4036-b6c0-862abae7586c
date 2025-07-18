@@ -1,9 +1,5 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { Separator } from '../ui/separator';
 import { ItineraryDay, Activity } from '../../lib/generate-itinerary';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -17,12 +13,17 @@ const ActivityItem: React.FC<{ activity: Activity }> = ({ activity }) => {
   // Get color based on activity category
   const getCategoryColor = () => {
     switch (activity.category) {
-      case 'food': return 'bg-orange-500';
-      case 'sightseeing': return 'bg-blue-500';
-      case 'transportation': return 'bg-gray-500';
-      case 'accommodation': return 'bg-purple-500';
-      case 'entertainment': return 'bg-green-500';
-      default: return 'bg-gray-500';
+      case 'food': return 'bg-orange-500 text-white';
+      case 'sightseeing': return 'bg-blue-500 text-white';
+      case 'transportation': return 'bg-gray-500 text-white';
+      case 'accommodation': return 'bg-purple-500 text-white';
+      case 'entertainment': return 'bg-green-500 text-white';
+      case 'shopping': return 'bg-pink-500 text-white';
+      case 'nature': return 'bg-emerald-500 text-white';
+      case 'culture': return 'bg-indigo-500 text-white';
+      case 'leisure': return 'bg-sky-500 text-white';
+      case 'wellness': return 'bg-teal-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
   
@@ -33,12 +34,12 @@ const ActivityItem: React.FC<{ activity: Activity }> = ({ activity }) => {
           {activity.time}
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h4 className="font-medium">{activity.title}</h4>
             {activity.category && (
-              <Badge className={`text-xs ${getCategoryColor()}`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${getCategoryColor()}`}>
                 {activity.category}
-              </Badge>
+              </span>
             )}
           </div>
           <p className="text-sm text-muted-foreground mt-1">
@@ -50,7 +51,7 @@ const ActivityItem: React.FC<{ activity: Activity }> = ({ activity }) => {
             </p>
           )}
           {activity.cost !== undefined && activity.cost > 0 && (
-            <p className="text-xs font-medium mt-1">
+            <p className="text-xs font-medium mt-1 text-primary">
               {formatCurrency(activity.cost)}
             </p>
           )}
@@ -69,34 +70,35 @@ const ItineraryDayCard: React.FC<ItineraryDayCardProps> = ({ day, expanded = fal
   }, 0);
   
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <CardHeader className="pb-3 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+    <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+      <div 
+        className="p-4 cursor-pointer" 
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="flex justify-between items-center">
-          <CardTitle className="text-lg flex items-center gap-2">
-            Day {day.day_number}
-            <span className="text-sm font-normal text-muted-foreground">
-              {formatDate(day.date)}
-            </span>
-          </CardTitle>
-          <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </Button>
+          <div>
+            <h3 className="font-semibold">
+              Day {day.day_number} - {formatDate(day.date)}
+            </h3>
+            <div className="flex justify-between items-center text-sm text-muted-foreground">
+              <span>{day.activities.length} activities</span>
+              <span className="font-medium text-primary">{formatCurrency(totalCost)}</span>
+            </div>
+          </div>
+          <button className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </button>
         </div>
-        <div className="flex justify-between items-center text-sm">
-          <div>{day.activities.length} activities</div>
-          <div className="font-medium">{formatCurrency(totalCost)}</div>
-        </div>
-      </CardHeader>
+      </div>
       
       {isExpanded && (
-        <CardContent>
-          <Separator className="mb-4" />
+        <div className="p-4 pt-0 border-t border-border">
           {day.activities.map((activity, index) => (
             <ActivityItem key={index} activity={activity} />
           ))}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 };
 

@@ -1,38 +1,37 @@
 
 import React from 'react';
-import { Card, CardContent } from '../ui/card';
-import { Badge } from '../../lib/supabase';
+import { TravelBadge } from '../../lib/supabase';
+import { formatDate } from '../../lib/utils';
+import { Award } from 'lucide-react';
 
 interface BadgeCardProps {
-  badge: Badge;
+  badge: TravelBadge;
 }
 
 const BadgeCard: React.FC<BadgeCardProps> = ({ badge }) => {
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <CardContent className="p-4 flex flex-col items-center">
-        <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-2">
-          {badge.badge_image_url ? (
-            <img 
-              src={badge.badge_image_url} 
-              alt={badge.badge_name} 
-              className="w-12 h-12 object-contain"
-            />
-          ) : (
-            <div className="text-2xl font-bold text-primary">
-              {badge.badge_name.charAt(0)}
-            </div>
-          )}
-        </div>
-        <h3 className="font-medium text-sm text-center">{badge.badge_name}</h3>
-        <p className="text-xs text-muted-foreground text-center mt-1">
-          {badge.badge_description || 'Achievement unlocked!'}
+    <div className="bg-card rounded-lg border border-border shadow-sm p-4 flex flex-col items-center text-center">
+      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+        {badge.badge_image_url ? (
+          <img 
+            src={badge.badge_image_url} 
+            alt={badge.badge_name} 
+            className="w-8 h-8 object-contain"
+          />
+        ) : (
+          <Award className="h-6 w-6 text-primary" />
+        )}
+      </div>
+      <h3 className="font-medium text-sm">{badge.badge_name}</h3>
+      {badge.badge_description && (
+        <p className="text-xs text-muted-foreground mt-1">
+          {badge.badge_description}
         </p>
-        <p className="text-xs text-muted-foreground mt-2">
-          {new Date(badge.earned_at).toLocaleDateString()}
-        </p>
-      </CardContent>
-    </Card>
+      )}
+      <p className="text-xs text-muted-foreground mt-2">
+        {formatDate(badge.earned_at)}
+      </p>
+    </div>
   );
 };
 

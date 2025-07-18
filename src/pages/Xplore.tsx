@@ -1,42 +1,40 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { supabase, SocialPost } from '../lib/supabase';
 import { Button } from '../components/ui/button';
-import { useToast } from '../components/ui/use-toast';
 import SocialPostCard from '../components/ui/social-post-card';
 import AppLayout from '../components/layout/AppLayout';
-import { Compass, RefreshCw } from 'lucide-react';
+import { fetchPosts, likePost, unlikePost, checkIfLiked, cloneTrip } from '../lib/supabase';
+import { Post } from '../lib/supabase';
+import { Compass, RefreshCw, Filter, Search } from 'lucide-react';
 
 const Xplore = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   
-  const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   
   useEffect(() => {
-    fetchPosts();
+    fetchPostsData();
   }, []);
   
-  const fetchPosts = async () => {
+  const fetchPostsData = async () => {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase
-        .from('social_posts')
-        .select(`
-          *,
-          user:users(*),
-          trip:trips(*)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const fetchedPosts = await fetchPosts();
+      setPosts(fetchedPosts);
       
-      if (error) {
-        console.error('Error fetching posts:', error);
-      } else if (data) {
-        setPosts(data as SocialPost[]);
+      // Check which posts are liked by the current user
+      if (user) {
+        const likedStatus: Record<string, boolean> = {};
+        
+        for (const post of fetchedPosts) {
+          likedStatus[post.id] = await checkIfLiked(post.id, user.id);
+        }
+        
+        setLikedPosts(likedStatus);
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -45,82 +43,57 @@ const Xplore = () => {
     }
   };
   
-  const handleCloneTrip = async (tripId: string) => {
+  const handleLikePost = async (postId: string) => {
     if (!user) {
-      toast({
-        title: 'Login required',
-        description: 'Please log in to clone this trip.',
-        variant: 'destructive',
-      });
+      alert('Please log in to like posts');
       return;
     }
     
     try {
-      // Get the original trip
-      const { data: originalTrip, error: tripError } = await supabase
-        .from('trips')
-        .select('*')
-        .eq('id', tripId)
-        .single();
+      const isLiked = likedPosts[postId];
       
-      if (tripError || !originalTrip) {
-        throw new Error('Failed to fetch original trip');
+      if (isLiked) {
+        await unlikePost(postId, user.id);
+        
+        // Update local state
+        setPosts(posts.map(post => 
+          post.id === postId 
+            ? { ...post, likes_count: Math.max(0, post.likes_count - 1) } 
+            : post
+        ));
+      } else {
+        await likePost(postId, user.id);
+        
+        // Update local state
+        setPosts(posts.map(post => 
+          post.id === postId 
+            ? { ...post, likes_count: post.likes_count + 1 } 
+            : post
+        ));
       }
       
-      // Clone the trip for the current user
-      const { data: newTrip, error: cloneError } = await supabase
-        .from('trips')
-        .insert({
-          user_id: user.id,
-          title: `${originalTrip.title} (Cloned)`,
-          destination: originalTrip.destination,
-          start_date: originalTrip.start_date,
-          end_date: originalTrip.end_date,
-          budget: originalTrip.budget,
-          interests: originalTrip.interests,
-          status: 'upcoming',
-          is_public: false,
-        })
-        .select()
-        .single();
-      
-      if (cloneError || !newTrip) {
-        throw new Error('Failed to clone trip');
-      }
-      
-      // Get the original itinerary
-      const { data: originalItinerary, error: itineraryError } = await supabase
-        .from('itinerary_days')
-        .select('*')
-        .eq('trip_id', tripId);
-      
-      if (itineraryError || !originalItinerary) {
-        throw new Error('Failed to fetch original itinerary');
-      }
-      
-      // Clone the itinerary for the new trip
-      for (const day of originalItinerary) {
-        await supabase
-          .from('itinerary_days')
-          .insert({
-            trip_id: newTrip.id,
-            day_number: day.day_number,
-            date: day.date,
-            activities: day.activities,
-          });
-      }
-      
-      toast({
-        title: 'Trip cloned!',
-        description: 'The trip has been added to your trips.',
+      // Toggle liked status
+      setLikedPosts({
+        ...likedPosts,
+        [postId]: !isLiked
       });
     } catch (error) {
+      console.error('Error liking/unliking post:', error);
+    }
+  };
+  
+  const handleCloneTrip = async (tripId: string) => {
+    if (!user) {
+      alert('Please log in to clone trips');
+      return;
+    }
+    
+    try {
+      await cloneTrip(tripId, user.id);
+      alert('Trip cloned successfully! Check your My Trips section.');
+    } catch (error) {
       console.error('Error cloning trip:', error);
-      toast({
-        title: 'Clone failed',
-        description: 'An error occurred while cloning the trip.',
-        variant: 'destructive',
-      });
+      alert('Failed to clone trip. Please try again.');
     }
   };
   
@@ -132,9 +105,17 @@ const Xplore = () => {
             <Compass size={24} className="text-primary" />
             <h1 className="text-2xl font-bold">Xplore</h1>
           </div>
-          <Button variant="ghost" size="sm" onClick={fetchPosts} disabled={loading}>
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" className="p-2">
+              <Filter size={18} />
+            </Button>
+            <Button variant="ghost" size="sm" className="p-2">
+              <Search size={18} />
+            </Button>
+            <Button variant="ghost" size="sm" className="p-2" onClick={fetchPostsData} disabled={loading}>
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+            </Button>
+          </div>
         </div>
         
         {loading ? (
@@ -151,7 +132,11 @@ const Xplore = () => {
               <SocialPostCard
                 key={post.id}
                 post={post}
-                onCloneTrip={handleCloneTrip}
+                onLike={() => handleLikePost(post.id)}
+                onComment={() => alert('Comment feature coming soon')}
+                onShare={() => alert('Share feature coming soon')}
+                onCloneTrip={() => handleCloneTrip(post.trip_id)}
+                isLiked={likedPosts[post.id]}
               />
             ))}
           </div>

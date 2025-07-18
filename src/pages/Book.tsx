@@ -1,21 +1,19 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { useToast } from '../components/ui/use-toast';
 import AppLayout from '../components/layout/AppLayout';
+import { fetchTrip, createBooking } from '../lib/supabase';
 import { Plane, Hotel, Train, Calendar, MapPin, CreditCard, Check } from 'lucide-react';
 
 const Book = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const { toast } = useToast();
   
   // Get tripId from location state if available
   const tripId = location.state?.tripId;
@@ -43,38 +41,63 @@ const Book = () => {
   const [trainDepartDate, setTrainDepartDate] = useState('');
   const [trainPassengers, setTrainPassengers] = useState('1');
   
+  // Load trip data if tripId is provided
+  useEffect(() => {
+    if (tripId) {
+      const loadTripData = async () => {
+        try {
+          const trip = await fetchTrip(tripId);
+          
+          // Pre-fill flight form
+          if (trip.source) setFlightOrigin(trip.source);
+          setFlightDestination(trip.destination);
+          setFlightDepartDate(trip.start_date);
+          setFlightReturnDate(trip.end_date);
+          
+          // Pre-fill hotel form
+          setHotelLocation(trip.destination);
+          setHotelCheckIn(trip.start_date);
+          setHotelCheckOut(trip.end_date);
+          
+          // Pre-fill train form
+          if (trip.source) setTrainOrigin(trip.source);
+          setTrainDestination(trip.destination);
+          setTrainDepartDate(trip.start_date);
+        } catch (error) {
+          console.error('Error loading trip data:', error);
+        }
+      };
+      
+      loadTripData();
+    }
+  }, [tripId]);
+  
   const handleBookFlight = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       if (user) {
         // Save booking to database
-        await supabase
-          .from('bookings')
-          .insert({
-            trip_id: tripId,
-            user_id: user.id,
-            type: 'flight',
-            details: {
-              origin: flightOrigin,
-              destination: flightDestination,
-              departDate: flightDepartDate,
-              returnDate: flightReturnDate,
-              passengers: parseInt(flightPassengers),
-            },
-            confirmation_code: `FL${Math.floor(Math.random() * 10000)}`,
-            status: 'confirmed',
-          });
+        await createBooking({
+          trip_id: tripId || '',
+          user_id: user.id,
+          type: 'flight',
+          details: {
+            origin: flightOrigin,
+            destination: flightDestination,
+            departDate: flightDepartDate,
+            returnDate: flightReturnDate,
+            passengers: parseInt(flightPassengers),
+          },
+          confirmation_code: `FL${Math.floor(Math.random() * 10000)}`,
+          status: 'confirmed',
+        });
       }
       
       setShowConfirmation(true);
     } catch (error) {
       console.error('Error booking flight:', error);
-      toast({
-        title: 'Booking failed',
-        description: 'An error occurred while processing your booking.',
-        variant: 'destructive',
-      });
+      alert('Failed to book flight. Please try again.');
     }
   };
   
@@ -84,32 +107,26 @@ const Book = () => {
     try {
       if (user) {
         // Save booking to database
-        await supabase
-          .from('bookings')
-          .insert({
-            trip_id: tripId,
-            user_id: user.id,
-            type: 'hotel',
-            details: {
-              location: hotelLocation,
-              checkIn: hotelCheckIn,
-              checkOut: hotelCheckOut,
-              guests: parseInt(hotelGuests),
-              rooms: parseInt(hotelRooms),
-            },
-            confirmation_code: `HT${Math.floor(Math.random() * 10000)}`,
-            status: 'confirmed',
-          });
+        await createBooking({
+          trip_id: tripId || '',
+          user_id: user.id,
+          type: 'hotel',
+          details: {
+            location: hotelLocation,
+            checkIn: hotelCheckIn,
+            checkOut: hotelCheckOut,
+            guests: parseInt(hotelGuests),
+            rooms: parseInt(hotelRooms),
+          },
+          confirmation_code: `HT${Math.floor(Math.random() * 10000)}`,
+          status: 'confirmed',
+        });
       }
       
       setShowConfirmation(true);
     } catch (error) {
       console.error('Error booking hotel:', error);
-      toast({
-        title: 'Booking failed',
-        description: 'An error occurred while processing your booking.',
-        variant: 'destructive',
-      });
+      alert('Failed to book hotel. Please try again.');
     }
   };
   
@@ -119,31 +136,25 @@ const Book = () => {
     try {
       if (user) {
         // Save booking to database
-        await supabase
-          .from('bookings')
-          .insert({
-            trip_id: tripId,
-            user_id: user.id,
-            type: 'train',
-            details: {
-              origin: trainOrigin,
-              destination: trainDestination,
-              departDate: trainDepartDate,
-              passengers: parseInt(trainPassengers),
-            },
-            confirmation_code: `TR${Math.floor(Math.random() * 10000)}`,
-            status: 'confirmed',
-          });
+        await createBooking({
+          trip_id: tripId || '',
+          user_id: user.id,
+          type: 'train',
+          details: {
+            origin: trainOrigin,
+            destination: trainDestination,
+            departDate: trainDepartDate,
+            passengers: parseInt(trainPassengers),
+          },
+          confirmation_code: `TR${Math.floor(Math.random() * 10000)}`,
+          status: 'confirmed',
+        });
       }
       
       setShowConfirmation(true);
     } catch (error) {
       console.error('Error booking train:', error);
-      toast({
-        title: 'Booking failed',
-        description: 'An error occurred while processing your booking.',
-        variant: 'destructive',
-      });
+      alert('Failed to book train. Please try again.');
     }
   };
   
@@ -208,46 +219,62 @@ const Book = () => {
                   <form onSubmit={handleBookFlight} className="space-y-4 pt-4">
                     <div className="space-y-2">
                       <Label htmlFor="flight-origin">Origin</Label>
-                      <Input
-                        id="flight-origin"
-                        placeholder="City or airport"
-                        value={flightOrigin}
-                        onChange={(e) => setFlightOrigin(e.target.value)}
-                        required
-                      />
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="flight-origin"
+                          className="pl-9"
+                          placeholder="City or airport"
+                          value={flightOrigin}
+                          onChange={(e) => setFlightOrigin(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="flight-destination">Destination</Label>
-                      <Input
-                        id="flight-destination"
-                        placeholder="City or airport"
-                        value={flightDestination}
-                        onChange={(e) => setFlightDestination(e.target.value)}
-                        required
-                      />
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="flight-destination"
+                          className="pl-9"
+                          placeholder="City or airport"
+                          value={flightDestination}
+                          onChange={(e) => setFlightDestination(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="flight-depart">Departure</Label>
-                        <Input
-                          id="flight-depart"
-                          type="date"
-                          value={flightDepartDate}
-                          onChange={(e) => setFlightDepartDate(e.target.value)}
-                          required
-                        />
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="flight-depart"
+                            className="pl-9"
+                            type="date"
+                            value={flightDepartDate}
+                            onChange={(e) => setFlightDepartDate(e.target.value)}
+                            required
+                          />
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="flight-return">Return</Label>
-                        <Input
-                          id="flight-return"
-                          type="date"
-                          value={flightReturnDate}
-                          onChange={(e) => setFlightReturnDate(e.target.value)}
-                          required
-                        />
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="flight-return"
+                            className="pl-9"
+                            type="date"
+                            value={flightReturnDate}
+                            onChange={(e) => setFlightReturnDate(e.target.value)}
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
                     
@@ -274,35 +301,47 @@ const Book = () => {
                   <form onSubmit={handleBookHotel} className="space-y-4 pt-4">
                     <div className="space-y-2">
                       <Label htmlFor="hotel-location">Destination</Label>
-                      <Input
-                        id="hotel-location"
-                        placeholder="City or specific hotel"
-                        value={hotelLocation}
-                        onChange={(e) => setHotelLocation(e.target.value)}
-                        required
-                      />
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="hotel-location"
+                          className="pl-9"
+                          placeholder="City or specific hotel"
+                          value={hotelLocation}
+                          onChange={(e) => setHotelLocation(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="hotel-checkin">Check-in</Label>
-                        <Input
-                          id="hotel-checkin"
-                          type="date"
-                          value={hotelCheckIn}
-                          onChange={(e) => setHotelCheckIn(e.target.value)}
-                          required
-                        />
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="hotel-checkin"
+                            className="pl-9"
+                            type="date"
+                            value={hotelCheckIn}
+                            onChange={(e) => setHotelCheckIn(e.target.value)}
+                            required
+                          />
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="hotel-checkout">Check-out</Label>
-                        <Input
-                          id="hotel-checkout"
-                          type="date"
-                          value={hotelCheckOut}
-                          onChange={(e) => setHotelCheckOut(e.target.value)}
-                          required
-                        />
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="hotel-checkout"
+                            className="pl-9"
+                            type="date"
+                            value={hotelCheckOut}
+                            onChange={(e) => setHotelCheckOut(e.target.value)}
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
                     
@@ -343,35 +382,47 @@ const Book = () => {
                   <form onSubmit={handleBookTrain} className="space-y-4 pt-4">
                     <div className="space-y-2">
                       <Label htmlFor="train-origin">Origin</Label>
-                      <Input
-                        id="train-origin"
-                        placeholder="City or station"
-                        value={trainOrigin}
-                        onChange={(e) => setTrainOrigin(e.target.value)}
-                        required
-                      />
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="train-origin"
+                          className="pl-9"
+                          placeholder="City or station"
+                          value={trainOrigin}
+                          onChange={(e) => setTrainOrigin(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="train-destination">Destination</Label>
-                      <Input
-                        id="train-destination"
-                        placeholder="City or station"
-                        value={trainDestination}
-                        onChange={(e) => setTrainDestination(e.target.value)}
-                        required
-                      />
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="train-destination"
+                          className="pl-9"
+                          placeholder="City or station"
+                          value={trainDestination}
+                          onChange={(e) => setTrainDestination(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="train-depart">Departure Date</Label>
-                      <Input
-                        id="train-depart"
-                        type="date"
-                        value={trainDepartDate}
-                        onChange={(e) => setTrainDepartDate(e.target.value)}
-                        required
-                      />
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="train-depart"
+                          className="pl-9"
+                          type="date"
+                          value={trainDepartDate}
+                          onChange={(e) => setTrainDepartDate(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     
                     <div className="space-y-2">
