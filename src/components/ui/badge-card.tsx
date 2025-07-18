@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/lib/supabase';
+import { Card, CardContent } from '../ui/card';
+import { Badge } from '../../lib/supabase';
 
 interface BadgeCardProps {
   badge: Badge;

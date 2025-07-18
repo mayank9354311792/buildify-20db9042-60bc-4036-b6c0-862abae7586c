@@ -1,15 +1,15 @@
 
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
-import AppLayout from '@/components/layout/AppLayout';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { useToast } from '../components/ui/use-toast';
+import AppLayout from '../components/layout/AppLayout';
 import { Plane, Hotel, Train, Calendar, MapPin, CreditCard, Check } from 'lucide-react';
 
 const Book = () => {

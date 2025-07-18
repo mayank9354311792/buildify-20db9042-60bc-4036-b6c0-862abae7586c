@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { SocialPost } from '@/lib/supabase';
-import { formatDate } from '@/lib/utils';
+import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
+import { Button } from '../ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Badge } from '../ui/badge';
+import { SocialPost } from '../../lib/supabase';
+import { formatDate } from '../../lib/utils';
 import { Heart, MessageCircle, Share2 } from 'lucide-react';
 
 interface SocialPostCardProps {

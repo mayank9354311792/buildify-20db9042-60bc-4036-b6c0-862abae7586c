@@ -1,19 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
-import { supabase, Badge, WishDestination } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import BadgeCard from '@/components/ui/badge-card';
-import AppLayout from '@/components/layout/AppLayout';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { supabase, Badge, WishDestination } from '../lib/supabase';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Separator } from '../components/ui/separator';
+import { Switch } from '../components/ui/switch';
+import { Label } from '../components/ui/label';
+import { useToast } from '../components/ui/use-toast';
+import BadgeCard from '../components/ui/badge-card';
+import AppLayout from '../components/layout/AppLayout';
 import { User, LogOut, Map, Sun, Moon, Computer, Award, MapPin, Heart } from 'lucide-react';
 
 const Profile = () => {

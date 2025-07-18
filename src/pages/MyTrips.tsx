@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { supabase, Trip } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
-import TripCard from '@/components/ui/trip-card';
-import AppLayout from '@/components/layout/AppLayout';
+import { useAuth } from '../context/AuthContext';
+import { supabase, Trip } from '../lib/supabase';
+import { Button } from '../components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { useToast } from '../components/ui/use-toast';
+import TripCard from '../components/ui/trip-card';
+import AppLayout from '../components/layout/AppLayout';
 import { Map, RefreshCw } from 'lucide-react';
 
 const MyTrips = () => {

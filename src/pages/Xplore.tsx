@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { supabase, SocialPost } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import SocialPostCard from '@/components/ui/social-post-card';
-import AppLayout from '@/components/layout/AppLayout';
+import { useAuth } from '../context/AuthContext';
+import { supabase, SocialPost } from '../lib/supabase';
+import { Button } from '../components/ui/button';
+import { useToast } from '../components/ui/use-toast';
+import SocialPostCard from '../components/ui/social-post-card';
+import AppLayout from '../components/layout/AppLayout';
 import { Compass, RefreshCw } from 'lucide-react';
 
 const Xplore = () => {
