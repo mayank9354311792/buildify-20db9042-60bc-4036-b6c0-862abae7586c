@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Plane, Globe, Map, User } from 'lucide-react';
+import { Home, Compass, Map, User, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const BottomNavigation: React.FC = () => {
+const BottomNavigation = () => {
   const location = useLocation();
   
   const navItems = [
@@ -16,12 +16,12 @@ const BottomNavigation: React.FC = () => {
     {
       name: 'Book',
       path: '/book',
-      icon: Plane,
+      icon: BookOpen,
     },
     {
       name: 'Xplore',
       path: '/xplore',
-      icon: Globe,
+      icon: Compass,
     },
     {
       name: 'My Trips',
@@ -36,28 +36,26 @@ const BottomNavigation: React.FC = () => {
   ];
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border h-16 flex items-center justify-around px-2">
-      {navItems.map((item) => {
-        const isActive = location.pathname === item.path;
-        return (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={cn(
-              "flex flex-col items-center justify-center w-full h-full text-xs transition-colors",
-              isActive 
-                ? "text-primary" 
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <item.icon className={cn(
-              "h-6 w-6 mb-1",
-              isActive && "text-primary"
-            )} />
-            <span>{item.name}</span>
-          </Link>
-        );
-      })}
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
+      <div className="flex justify-around items-center h-16">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                'flex flex-col items-center justify-center w-full h-full transition-colors',
+                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <item.icon size={20} className={cn(isActive ? 'animate-pulse' : '')} />
+              <span className="text-xs mt-1">{item.name}</span>
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 };

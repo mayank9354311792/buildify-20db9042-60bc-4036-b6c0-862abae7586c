@@ -1,120 +1,92 @@
 
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Heart, MessageCircle, Share2, MapPin } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { SocialPost } from '@/lib/supabase';
+import { formatDate } from '@/lib/utils';
+import { Heart, MessageCircle, Share2 } from 'lucide-react';
 
 interface SocialPostCardProps {
-  id: string;
-  username: string;
-  avatarUrl?: string;
-  destination: string;
-  content: string;
-  imageUrls: string[];
-  likesCount: number;
-  isLiked?: boolean;
-  isCreator?: boolean;
-  earnings?: number;
-  className?: string;
-  onLike?: (id: string) => void;
-  onCloneTrip?: (id: string) => void;
+  post: SocialPost;
+  onCloneTrip: (tripId: string) => void;
 }
 
-const SocialPostCard: React.FC<SocialPostCardProps> = ({
-  id,
-  username,
-  avatarUrl,
-  destination,
-  content,
-  imageUrls,
-  likesCount,
-  isLiked = false,
-  isCreator = false,
-  earnings,
-  className,
-  onLike,
-  onCloneTrip,
-}) => {
+const SocialPostCard: React.FC<SocialPostCardProps> = ({ post, onCloneTrip }) => {
   return (
-    <Card className={cn("overflow-hidden", className)}>
-      <CardHeader className="p-4 pb-2 flex flex-row items-center space-x-4">
-        <Avatar>
-          <AvatarImage src={avatarUrl} alt={username} />
-          <AvatarFallback>{username.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <div className="flex items-center">
-            <span className="font-medium">{username}</span>
-            {isCreator && (
-              <Badge className="ml-2 bg-primary/20 text-primary hover:bg-primary/30 px-2 py-0 h-5">
-                Creator
-              </Badge>
-            )}
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-2">
+          <Avatar>
+            <AvatarImage src={post.user?.avatar_url} />
+            <AvatarFallback>{post.user?.username.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium">{post.user?.username}</div>
+            <div className="text-xs text-muted-foreground">{formatDate(post.created_at)}</div>
           </div>
-          <div className="flex items-center text-muted-foreground text-sm">
-            <MapPin className="h-3 w-3 mr-1" />
-            <span>{destination}</span>
-          </div>
+          {post.user?.username === 'travelpro' && (
+            <Badge className="ml-auto" variant="secondary">Creator</Badge>
+          )}
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        {imageUrls.length > 0 && (
-          <div className="relative aspect-video bg-muted">
-            <img 
-              src={imageUrls[0]} 
-              alt={`${destination} trip`} 
-              className="w-full h-full object-cover"
-            />
-            {imageUrls.length > 1 && (
-              <div className="absolute bottom-2 right-2 bg-background/80 text-foreground rounded-full px-2 py-1 text-xs">
-                +{imageUrls.length - 1} more
-              </div>
-            )}
-          </div>
-        )}
-        <div className="p-4 pt-3">
-          <p className="text-sm">{content}</p>
-          {isCreator && earnings !== undefined && (
-            <div className="mt-2 text-xs font-medium text-green-600 dark:text-green-400">
-              Earnings: ${earnings.toFixed(2)}
+      
+      {post.image_urls && post.image_urls.length > 0 && (
+        <div className="relative aspect-video">
+          <img 
+            src={post.image_urls[0]} 
+            alt="Trip" 
+            className="object-cover w-full h-full"
+          />
+          {post.trip && (
+            <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded-md text-sm">
+              {post.trip.destination}
             </div>
           )}
         </div>
+      )}
+      
+      <CardContent className="py-3">
+        {post.content && (
+          <p className="text-sm">{post.content}</p>
+        )}
+        
+        {post.trip && (
+          <div className="mt-2">
+            <Badge variant="outline" className="text-xs">
+              {post.trip.start_date && post.trip.end_date ? 
+                `${formatDate(post.trip.start_date)} - ${formatDate(post.trip.end_date)}` : 
+                'Trip dates not specified'}
+            </Badge>
+          </div>
+        )}
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between">
-        <div className="flex space-x-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={cn(
-              "flex items-center gap-1 px-2",
-              isLiked && "text-red-500 dark:text-red-400"
-            )}
-            onClick={() => onLike?.(id)}
-          >
-            <Heart className="h-4 w-4" />
-            <span>{likesCount}</span>
+      
+      <CardFooter className="flex justify-between pt-0">
+        <div className="flex gap-4">
+          <Button variant="ghost" size="sm" className="flex items-center gap-1 px-2">
+            <Heart size={16} />
+            <span>{post.likes_count}</span>
           </Button>
           <Button variant="ghost" size="sm" className="flex items-center gap-1 px-2">
-            <MessageCircle className="h-4 w-4" />
-            <span>Comment</span>
+            <MessageCircle size={16} />
+            <span>0</span>
           </Button>
           <Button variant="ghost" size="sm" className="flex items-center gap-1 px-2">
-            <Share2 className="h-4 w-4" />
-            <span>Share</span>
+            <Share2 size={16} />
           </Button>
         </div>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          className="text-primary border-primary hover:bg-primary/10"
-          onClick={() => onCloneTrip?.(id)}
-        >
-          Clone My Trip
-        </Button>
+        
+        {post.trip && (
+          <Button 
+            size="sm" 
+            onClick={() => onCloneTrip(post.trip_id)}
+            className="text-xs"
+          >
+            Clone My Trip
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

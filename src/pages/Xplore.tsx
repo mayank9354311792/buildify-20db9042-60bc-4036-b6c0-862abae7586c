@@ -1,36 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, SocialPost } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import AppLayout from '@/components/layout/AppLayout';
 import SocialPostCard from '@/components/ui/social-post-card';
-import { Search, RefreshCw, Loader2 } from 'lucide-react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Compass, RefreshCw } from 'lucide-react';
 
-interface SocialPost {
-  id: string;
-  user_id: string;
-  trip_id: string;
-  content: string;
-  image_urls: string[];
-  likes_count: number;
-  created_at: string;
-  username: string;
-  avatar_url: string | null;
-  destination: string;
-  isLiked?: boolean;
-}
-
-const Xplore: React.FC = () => {
+const Xplore = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
   
   useEffect(() => {
     fetchPosts();
@@ -40,182 +23,134 @@ const Xplore: React.FC = () => {
     setLoading(true);
     
     try {
-      // In a real app, this would be a proper join query
-      // For this MVP, we'll simulate the data
+      const { data, error } = await supabase
+        .from('social_posts')
+        .select(`
+          *,
+          user:users(*),
+          trip:trips(*)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
       
-      // Fetch some mock posts
-      const mockPosts: SocialPost[] = [
-        {
-          id: '1',
-          user_id: 'user1',
-          trip_id: 'trip1',
-          content: 'Just spent an amazing week exploring the streets of Paris! The Eiffel Tower at sunset is truly magical. #Paris #Travel',
-          image_urls: ['https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=2073&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'],
-          likes_count: 124,
-          created_at: new Date().toISOString(),
-          username: 'traveler123',
-          avatar_url: null,
-          destination: 'Paris, France',
-          isLiked: false,
-        },
-        {
-          id: '2',
-          user_id: 'user2',
-          trip_id: 'trip2',
-          content: 'Hiking through the mountains of Switzerland was breathtaking! The views are worth every step. #Switzerland #Hiking',
-          image_urls: ['https://images.unsplash.com/photo-1527668752968-14dc70a27c95?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'],
-          likes_count: 87,
-          created_at: new Date().toISOString(),
-          username: 'mountainlover',
-          avatar_url: null,
-          destination: 'Swiss Alps, Switzerland',
-          isLiked: true,
-        },
-        {
-          id: '3',
-          user_id: 'user3',
-          trip_id: 'trip3',
-          content: 'Beach vibes in Bali! The perfect place to relax and recharge. #Bali #BeachLife',
-          image_urls: ['https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=2038&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'],
-          likes_count: 215,
-          created_at: new Date().toISOString(),
-          username: 'beachlover',
-          avatar_url: null,
-          destination: 'Bali, Indonesia',
-          isLiked: false,
-        },
-        {
-          id: '4',
-          user_id: 'user4',
-          trip_id: 'trip4',
-          content: 'Exploring the ancient ruins of Rome. So much history in one place! #Rome #History',
-          image_urls: ['https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=1996&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'],
-          likes_count: 156,
-          created_at: new Date().toISOString(),
-          username: 'historybuff',
-          avatar_url: null,
-          destination: 'Rome, Italy',
-          isLiked: false,
-        },
-        {
-          id: '5',
-          user_id: 'user5',
-          trip_id: 'trip5',
-          content: 'The food in Tokyo is incredible! Trying all the local specialties. #Tokyo #FoodTour',
-          image_urls: ['https://images.unsplash.com/photo-1503899036084-c55cdd92da26?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'],
-          likes_count: 189,
-          created_at: new Date().toISOString(),
-          username: 'foodie_traveler',
-          avatar_url: null,
-          destination: 'Tokyo, Japan',
-          isLiked: true,
-        },
-      ];
-      
-      setPosts(mockPosts);
+      if (error) {
+        console.error('Error fetching posts:', error);
+      } else if (data) {
+        setPosts(data as SocialPost[]);
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load posts. Please try again.',
-        variant: 'destructive',
-      });
     } finally {
       setLoading(false);
     }
   };
   
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchPosts();
-    setRefreshing(false);
-  };
-  
-  const handleLike = (postId: string) => {
-    // Update local state
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        const isLiked = !post.isLiked;
-        return {
-          ...post,
-          likes_count: isLiked ? post.likes_count + 1 : post.likes_count - 1,
-          isLiked,
-        };
-      }
-      return post;
-    }));
+  const handleCloneTrip = async (tripId: string) => {
+    if (!user) {
+      toast({
+        title: 'Login required',
+        description: 'Please log in to clone this trip.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
-    // In a real app, we would update the database
-    toast({
-      title: 'Success',
-      description: 'Post liked!',
-    });
+    try {
+      // Get the original trip
+      const { data: originalTrip, error: tripError } = await supabase
+        .from('trips')
+        .select('*')
+        .eq('id', tripId)
+        .single();
+      
+      if (tripError || !originalTrip) {
+        throw new Error('Failed to fetch original trip');
+      }
+      
+      // Clone the trip for the current user
+      const { data: newTrip, error: cloneError } = await supabase
+        .from('trips')
+        .insert({
+          user_id: user.id,
+          title: `${originalTrip.title} (Cloned)`,
+          destination: originalTrip.destination,
+          start_date: originalTrip.start_date,
+          end_date: originalTrip.end_date,
+          budget: originalTrip.budget,
+          interests: originalTrip.interests,
+          status: 'upcoming',
+          is_public: false,
+        })
+        .select()
+        .single();
+      
+      if (cloneError || !newTrip) {
+        throw new Error('Failed to clone trip');
+      }
+      
+      // Get the original itinerary
+      const { data: originalItinerary, error: itineraryError } = await supabase
+        .from('itinerary_days')
+        .select('*')
+        .eq('trip_id', tripId);
+      
+      if (itineraryError || !originalItinerary) {
+        throw new Error('Failed to fetch original itinerary');
+      }
+      
+      // Clone the itinerary for the new trip
+      for (const day of originalItinerary) {
+        await supabase
+          .from('itinerary_days')
+          .insert({
+            trip_id: newTrip.id,
+            day_number: day.day_number,
+            date: day.date,
+            activities: day.activities,
+          });
+      }
+      
+      toast({
+        title: 'Trip cloned!',
+        description: 'The trip has been added to your trips.',
+      });
+    } catch (error) {
+      console.error('Error cloning trip:', error);
+      toast({
+        title: 'Clone failed',
+        description: 'An error occurred while cloning the trip.',
+        variant: 'destructive',
+      });
+    }
   };
-  
-  const handleCloneTrip = (postId: string) => {
-    // In a real app, this would clone the trip for the user
-    toast({
-      title: 'Trip cloned',
-      description: 'This trip has been added to your trips.',
-    });
-  };
-  
-  const filteredPosts = searchQuery
-    ? posts.filter(post => 
-        post.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.username.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : posts;
   
   return (
     <AppLayout>
-      <div className="container max-w-4xl mx-auto p-4 pb-20">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Xplore</h1>
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
-            {refreshing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
+      <div className="container max-w-md mx-auto p-4">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Compass size={24} className="text-primary" />
+            <h1 className="text-2xl font-bold">Xplore</h1>
+          </div>
+          <Button variant="ghost" size="sm" onClick={fetchPosts} disabled={loading}>
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </Button>
         </div>
         
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-          <Input
-            placeholder="Search destinations, users, or keywords..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex justify-center py-8">
+            <RefreshCw size={24} className="animate-spin text-primary" />
           </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No posts found. Try a different search.</p>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No posts to display</p>
           </div>
         ) : (
           <div className="space-y-6">
-            {filteredPosts.map((post) => (
+            {posts.map((post) => (
               <SocialPostCard
                 key={post.id}
-                id={post.id}
-                username={post.username}
-                avatarUrl={post.avatar_url || undefined}
-                destination={post.destination}
-                content={post.content}
-                imageUrls={post.image_urls}
-                likesCount={post.likes_count}
-                isLiked={post.isLiked}
-                isCreator={post.user_id === 'user5'} // Just for demo
-                earnings={post.user_id === 'user5' ? 125.50 : undefined} // Just for demo
-                onLike={handleLike}
+                post={post}
                 onCloneTrip={handleCloneTrip}
               />
             ))}

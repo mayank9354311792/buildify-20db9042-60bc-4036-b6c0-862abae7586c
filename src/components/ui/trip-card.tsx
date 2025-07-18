@@ -1,118 +1,130 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, DollarSign } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
+import { Trip } from '@/lib/supabase';
+import { formatDate, formatCurrency } from '@/lib/utils';
+import { Calendar, MapPin, DollarSign } from 'lucide-react';
 
 interface TripCardProps {
-  id: string;
-  title: string;
-  destination: string;
-  startDate: string;
-  endDate: string;
-  budget?: number;
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-  progress?: number;
-  daysLeft?: number;
-  className?: string;
-  onView?: (id: string) => void;
-  onEdit?: (id: string) => void;
-  onCancel?: (id: string) => void;
-  onStart?: (id: string) => void;
+  trip: Trip;
+  onEdit?: () => void;
+  onCancel?: () => void;
+  onStart?: () => void;
+  showProgress?: boolean;
 }
 
-const TripCard: React.FC<TripCardProps> = ({
-  id,
-  title,
-  destination,
-  startDate,
-  endDate,
-  budget,
-  status,
-  progress = 0,
-  daysLeft,
-  className,
-  onView,
-  onEdit,
-  onCancel,
+const TripCard: React.FC<TripCardProps> = ({ 
+  trip, 
+  onEdit, 
+  onCancel, 
   onStart,
+  showProgress = false
 }) => {
-  const statusColors = {
-    upcoming: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-    ongoing: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    completed: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-    cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+  // Calculate trip duration in days
+  const startDate = new Date(trip.start_date);
+  const endDate = new Date(trip.end_date);
+  const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)) + 1;
+  
+  // Calculate progress for ongoing trips
+  const calculateProgress = () => {
+    if (trip.status !== 'ongoing') return 0;
+    
+    const today = new Date();
+    const elapsed = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+    const progress = Math.min(Math.max(0, (elapsed / durationDays) * 100), 100);
+    
+    return progress;
   };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  
+  // Calculate days left for ongoing trips
+  const calculateDaysLeft = () => {
+    if (trip.status !== 'ongoing') return 0;
+    
+    const today = new Date();
+    const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+    
+    return Math.max(0, daysLeft);
   };
-
+  
+  const progress = calculateProgress();
+  const daysLeft = calculateDaysLeft();
+  
+  // Status badge color
+  const getStatusColor = () => {
+    switch (trip.status) {
+      case 'upcoming': return 'bg-blue-500';
+      case 'ongoing': return 'bg-green-500';
+      case 'completed': return 'bg-gray-500';
+      case 'cancelled': return 'bg-red-500';
+      default: return 'bg-blue-500';
+    }
+  };
+  
   return (
-    <Card className={cn("overflow-hidden", className)}>
-      <CardHeader className="p-4 pb-2 flex flex-row justify-between items-start">
-        <div>
-          <h3 className="font-semibold text-lg">{title}</h3>
-          <div className="flex items-center text-muted-foreground text-sm mt-1">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span>{destination}</span>
-          </div>
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-xl">{trip.title}</CardTitle>
+          <Badge className={getStatusColor()}>
+            {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
+          </Badge>
         </div>
-        <Badge className={statusColors[status]}>
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </Badge>
       </CardHeader>
-      <CardContent className="p-4 pt-2 pb-2">
+      <CardContent className="pb-2">
         <div className="flex items-center text-sm mb-2">
-          <Calendar className="h-4 w-4 mr-1" />
-          <span>{formatDate(startDate)} - {formatDate(endDate)}</span>
+          <MapPin size={16} className="mr-1 text-primary" />
+          <span>{trip.destination}</span>
         </div>
-        {budget && (
-          <div className="flex items-center text-sm mb-2">
-            <DollarSign className="h-4 w-4 mr-1" />
-            <span>Budget: ${budget.toLocaleString()}</span>
+        <div className="flex items-center text-sm mb-2">
+          <Calendar size={16} className="mr-1 text-primary" />
+          <span>
+            {formatDate(trip.start_date)} - {formatDate(trip.end_date)} ({durationDays} days)
+          </span>
+        </div>
+        <div className="flex items-center text-sm mb-2">
+          <DollarSign size={16} className="mr-1 text-primary" />
+          <span>{formatCurrency(trip.budget)}</span>
+        </div>
+        
+        {trip.interests && trip.interests.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {trip.interests.map((interest, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {interest}
+              </Badge>
+            ))}
           </div>
         )}
-        {status === 'ongoing' && (
+        
+        {showProgress && trip.status === 'ongoing' && (
           <div className="mt-3">
-            <div className="flex justify-between text-xs mb-1">
-              <span>Progress</span>
-              <span>{Math.round(progress)}%</span>
-            </div>
             <Progress value={progress} className="h-2" />
-            {daysLeft !== undefined && (
-              <div className="text-xs text-muted-foreground mt-1 text-right">
-                {daysLeft} days left
-              </div>
-            )}
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>{Math.round(progress)}% complete</span>
+              <span>{daysLeft} days left</span>
+            </div>
           </div>
         )}
       </CardContent>
-      <CardFooter className="p-4 pt-2 flex gap-2 flex-wrap">
-        <Button size="sm" variant="default" onClick={() => onView?.(id)}>
-          View
-        </Button>
-        {status === 'upcoming' && (
+      <CardFooter className="flex gap-2 pt-2">
+        {trip.status === 'upcoming' && (
           <>
-            <Button size="sm" variant="outline" onClick={() => onEdit?.(id)}>
-              Edit
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => onStart?.(id)}>
-              Start Trip
-            </Button>
-            <Button size="sm" variant="destructive" onClick={() => onCancel?.(id)}>
-              Cancel
-            </Button>
+            {onStart && (
+              <Button size="sm" onClick={onStart}>Start Trip</Button>
+            )}
+            {onEdit && (
+              <Button size="sm" variant="outline" onClick={onEdit}>Edit</Button>
+            )}
+            {onCancel && (
+              <Button size="sm" variant="destructive" onClick={onCancel}>Cancel</Button>
+            )}
           </>
         )}
-        {status === 'ongoing' && (
-          <Button size="sm" variant="outline" onClick={() => onEdit?.(id)}>
-            Update
-          </Button>
+        {trip.status === 'ongoing' && onEdit && (
+          <Button size="sm" variant="outline" onClick={onEdit}>Update</Button>
         )}
       </CardFooter>
     </Card>

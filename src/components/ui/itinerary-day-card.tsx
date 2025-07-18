@@ -1,84 +1,101 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Activity } from '@/lib/generate-itinerary';
-import { cn } from '@/lib/utils';
+import { ItineraryDay, Activity } from '@/lib/generate-itinerary';
+import { formatDate, formatCurrency } from '@/lib/utils';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ItineraryDayCardProps {
-  dayNumber: number;
-  date: string;
-  activities: Activity[];
-  className?: string;
+  day: ItineraryDay;
+  expanded?: boolean;
 }
 
-const ItineraryDayCard: React.FC<ItineraryDayCardProps> = ({
-  dayNumber,
-  date,
-  activities,
-  className,
-}) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-  };
-
-  const getCategoryColor = (category?: string) => {
-    switch (category) {
-      case 'food':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
-      case 'sightseeing':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'transportation':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-      case 'accommodation':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-      case 'entertainment':
-        return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300';
-      default:
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+const ActivityItem: React.FC<{ activity: Activity }> = ({ activity }) => {
+  // Get color based on activity category
+  const getCategoryColor = () => {
+    switch (activity.category) {
+      case 'food': return 'bg-orange-500';
+      case 'sightseeing': return 'bg-blue-500';
+      case 'transportation': return 'bg-gray-500';
+      case 'accommodation': return 'bg-purple-500';
+      case 'entertainment': return 'bg-green-500';
+      default: return 'bg-gray-500';
     }
   };
-
+  
   return (
-    <Card className={cn("overflow-hidden", className)}>
-      <CardHeader className="p-4 pb-2 bg-primary/5">
+    <div className="mb-4 last:mb-0">
+      <div className="flex items-start">
+        <div className="text-sm font-medium w-16 text-muted-foreground">
+          {activity.time}
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h4 className="font-medium">{activity.title}</h4>
+            {activity.category && (
+              <Badge className={`text-xs ${getCategoryColor()}`}>
+                {activity.category}
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {activity.description}
+          </p>
+          {activity.location && (
+            <p className="text-xs text-muted-foreground mt-1">
+              📍 {activity.location}
+            </p>
+          )}
+          {activity.cost !== undefined && activity.cost > 0 && (
+            <p className="text-xs font-medium mt-1">
+              {formatCurrency(activity.cost)}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ItineraryDayCard: React.FC<ItineraryDayCardProps> = ({ day, expanded = false }) => {
+  const [isExpanded, setIsExpanded] = useState(expanded);
+  
+  // Calculate total cost for the day
+  const totalCost = day.activities.reduce((sum, activity) => {
+    return sum + (activity.cost || 0);
+  }, 0);
+  
+  return (
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <CardHeader className="pb-3 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold text-lg">Day {dayNumber}</h3>
-          <span className="text-sm text-muted-foreground">{formatDate(date)}</span>
+          <CardTitle className="text-lg flex items-center gap-2">
+            Day {day.day_number}
+            <span className="text-sm font-normal text-muted-foreground">
+              {formatDate(day.date)}
+            </span>
+          </CardTitle>
+          <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
+            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </Button>
+        </div>
+        <div className="flex justify-between items-center text-sm">
+          <div>{day.activities.length} activities</div>
+          <div className="font-medium">{formatCurrency(totalCost)}</div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-3 space-y-4">
-        {activities.map((activity, index) => (
-          <React.Fragment key={index}>
-            {index > 0 && <Separator className="my-3" />}
-            <div>
-              <div className="flex justify-between items-start mb-1">
-                <h4 className="font-medium">{activity.title}</h4>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">{activity.time}</span>
-                  {activity.category && (
-                    <span className={cn("text-xs px-2 py-0.5 rounded-full", getCategoryColor(activity.category))}>
-                      {activity.category}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground">{activity.description}</p>
-              {activity.location && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  Location: {activity.location}
-                </div>
-              )}
-              {activity.cost !== undefined && (
-                <div className="text-xs font-medium mt-1">
-                  Estimated cost: ${activity.cost}
-                </div>
-              )}
-            </div>
-          </React.Fragment>
-        ))}
-      </CardContent>
+      
+      {isExpanded && (
+        <CardContent>
+          <Separator className="mb-4" />
+          {day.activities.map((activity, index) => (
+            <ActivityItem key={index} activity={activity} />
+          ))}
+        </CardContent>
+      )}
     </Card>
   );
 };
